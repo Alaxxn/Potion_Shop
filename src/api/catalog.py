@@ -8,17 +8,22 @@ def get_catalog():
     """
     Each unique item combination must have only a single price.
     """
+    catalog = []
 
-    sql_to_execute =  "SELECT num_green_potions FROM global_inventory"
-    with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute)).scalar()
-    
-    return [
-            {
+    green_pots = {
                 "sku": "GREEN_POTION_100",
                 "name": "green potion",
-                "quantity": result,
-                "price": 50,
-                "potion_type": [0, 100, 0, 0],
+                "quantity": 1,
+                "price": 24,
+                "potion_type": [0,100, 0, 0],
             }
-        ]
+    
+    sql_to_execute =  "SELECT num_green_potions FROM global_inventory"
+    with db.engine.begin() as connection:
+        amount_green_potion = connection.execute(sqlalchemy.text(sql_to_execute)).scalar()
+    
+    if amount_green_potion > 0:
+        catalog.append(green_pots)
+
+
+    return catalog

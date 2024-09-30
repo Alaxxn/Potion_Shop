@@ -38,22 +38,23 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
     print(wholesale_catalog)
 
+    plan = []
+
     with db.engine.begin() as connection:
         num_green_potions = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory ")).scalar()
         gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory ")).scalar()
     
+    quantity = int(gold/100) 
 
-    if num_green_potions < 10 and gold >= 100:
+
+    if num_green_potions < 10 and quantity > 0 :
         purchase_sku = "SMALL_GREEN_BARREL"
-        quantity = int(gold/100) 
-    else:
-        purchase_sku = "None"
-        quantity = 0
-    
-    return [
-        {
+        green_barrel = {
             "sku": purchase_sku,
             "quantity": quantity,
         }
-    ]
+        plan.append(green_barrel)
+
+    #Need to return empty list when no purchase is made. []
+    return plan
 
