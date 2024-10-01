@@ -20,11 +20,13 @@ class PotionInventory(BaseModel):
 def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int):
     """ """
     with db.engine.begin() as connection:
-            ml_to_use= connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar()
+            ml_to_use = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar()
+    
     
     num_potions = ml_to_use/100
     potion_type = potions_delivered[0].potion_type
-    greem_ml_used = num_potions * potion_type[1]
+    greem_ml_used = num_potions * potion_type[1] #Check API spec to make this work
+
     print(f"POTION TYPE {potion_type}: QUANTITY IS {num_potions}: GREEN ML USED {greem_ml_used}")
     print(f"potions delievered: {len(potions_delivered)} order_id: {order_id}")
 

@@ -5,8 +5,6 @@ from enum import Enum
 import sqlalchemy
 from src import database as db
 
-carts = []
-
 router = APIRouter(
     prefix="/carts",
     tags=["cart"],
@@ -76,11 +74,14 @@ class Customer(BaseModel):
     character_class: str
     level: int
 
+carts = []
 @router.post("/visits/{visit_id}")
 def post_visits(visit_id: int, customers: list[Customer]):
     """
     Which customers visited the shop today?
     """
+    global carts
+    carts = []
     print(customers)
 
     return "OK"
@@ -89,22 +90,27 @@ def post_visits(visit_id: int, customers: list[Customer]):
 @router.post("/")
 def create_cart(new_cart: Customer):
     global carts
-
-    carts.append(new_cart)
+    carts.append([])
     id = len(carts) - 1
-
+    print(f"CARTS IN QUEUE: {carts}")
     return {"cart_id": id}
+
 
 class CartItem(BaseModel):
     quantity: int
 
-
+# cart_item
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ 
     """
+    with db.engine.begin() as connection:
+        green_pots = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar()
+        if green_pots >= cart_item.quantity:
+            connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = num_green_potions - {cart_item.quantity}"))
+            carts[cart_id] = cart_item.quantity
+    print(carts)
     return "OK"
-
 
 class CartCheckout(BaseModel):
     payment: str
@@ -112,12 +118,11 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
-
-    potins_update = "UPDATE global_inventory SET num_green_potions = num_green_potions - 1"
-    gold_update = f"UPDATE global_inventory SET gold = gold + {cart_checkout.payment}"
+    num_purchased = carts[cart_id]
+    total_gold = num_purchased * 24    
+    gold_update = f"UPDATE global_inventory SET gold = gold + {total_gold}"
 
     with db.engine.begin() as connection:
-            connection.execute(sqlalchemy.text(potins_update))
-            connection.execute(sqlalchemy.text(gold_update))
-
-    return {"total_potions_bought": 1, "total_gold_paid": cart_checkout.payment}
+        connection.execute(sqlalchemy.text(gold_update))
+    
+    return {"total_potions_bought": num_purchased, "total_gold_paid": total_gold}
