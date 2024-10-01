@@ -27,7 +27,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     if barrels_delivered[0] != "None":
         with db.engine.begin() as connection:
             connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = 500"))
-            connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = 0"))
+            connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold - {100}"))
         print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
 
     return "OK"
