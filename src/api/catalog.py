@@ -5,25 +5,36 @@ from src import database as db
 router = APIRouter()
 @router.get("/catalog/", tags=["catalog"])
 def get_catalog():
-    """
-    Each unique item combination must have only a single price.
-    """
+    
+    catalog_limit = 6
     catalog = []
 
-    green_pots = {
-                "sku": "GREEN_POTION_100",
-                "name": "green potion",
-                "quantity": 1,
-                "price": 24,
-                "potion_type": [0,100, 0, 0],
-            }
-    
-    sql_to_execute =  "SELECT num_green_potions FROM global_inventory"
+    inv_quer =  "SELECT sku, name, quantity, price, potion_type  FROM potion_inventory WHERE in_catalog = True AND quantity > 0"
     with db.engine.begin() as connection:
-        amount_green_potion = connection.execute(sqlalchemy.text(sql_to_execute)).scalar()
+        potions = connection.execute(sqlalchemy.text(inv_quer))
     
-    if amount_green_potion > 0:
-        catalog.append(green_pots)
+    #building catalog
+    for potion in potions:
+        potion_dict = potion._mapping
+        catalog.append(potion_dict)
 
+    #Filling the catalog with potions that have largest quantity
+    if len(catalog) < catalog_limit:
+        count = catalog_limit - len(catalog)
+        with db.engine.begin() as connection:
+            add_catalog = f"SELECT  sku, name, quantity, price, potion_type\
+            FROM potion_inventory \
+            WHERE in_catalog = False \
+            ORDER BY quantity DESC\
+            LIMIT {count}"
+            additional_potions = connection.execute(sqlalchemy.text(add_catalog))
+            for potion in additional_potions:
+                potion_dict = potion._mapping
+                print(potion_dict["quantity"])
+                catalog.append(potion_dict)
+                update = f"UPDATE potion_inventory SET in_catalog = True \
+                    WHERE SKU = {potion_dict["sku"]}"
+                connection.execute(sqlalchemy.text(add_catalog))
 
     return catalog
+

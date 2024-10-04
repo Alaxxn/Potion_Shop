@@ -89,6 +89,12 @@ def post_visits(visit_id: int, customers: list[Customer]):
 
 @router.post("/")
 def create_cart(new_cart: Customer):
+    """
+    class Customer(BaseModel):
+    customer_name: str
+    character_class: str
+    level: int
+    """
     global carts
     carts.append([])
     id = len(carts) - 1
