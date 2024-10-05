@@ -18,6 +18,8 @@ def get_catalog():
         potion_dict = potion._mapping
         catalog.append(potion_dict)
 
+    #TODO:Top selling potions should take priority
+
     #Filling the catalog with potions that have largest quantity
     if len(catalog) < catalog_limit:
         count = catalog_limit - len(catalog)
@@ -30,11 +32,10 @@ def get_catalog():
             additional_potions = connection.execute(sqlalchemy.text(add_catalog))
             for potion in additional_potions:
                 potion_dict = potion._mapping
-                print(potion_dict["quantity"])
                 catalog.append(potion_dict)
-                update = f"UPDATE potion_inventory SET in_catalog = True \
-                    WHERE SKU = {potion_dict["sku"]}"
-                connection.execute(sqlalchemy.text(add_catalog))
-
+                sku_value = potion_dict["sku"]
+                update_query = "UPDATE potion_inventory SET in_catalog = True WHERE sku = :sku"
+                connection.execute(sqlalchemy.text(update_query), {"sku": sku_value})
+    
     return catalog
 

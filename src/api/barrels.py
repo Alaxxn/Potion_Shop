@@ -12,11 +12,9 @@ router = APIRouter(
 
 class Barrel(BaseModel):
     sku: str
-
     ml_per_barrel: int
     potion_type: list[int]
     price: int
-
     quantity: int
 
 @router.post("/deliver/{order_id}")
@@ -35,29 +33,34 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 # Gets called once a day
 @router.post("/plan")
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
-    """ """
-    print(wholesale_catalog)
-    ml_limit = 10,000 #Should be a function call
+
+    #print(wholesale_catalog)
+    ml_limit = 10000 #temp soultion -> should be a function call
+    ml_threshold = ml_limit//4
     plan = []
 
-
-    inventory_query = "SELECT num_green_potions FROM global_inventory "
+    inventory_query = "SELECT potion_type, count FROM barrel_inventory"
+    gold_query = "SELECT gold FROM shop_balance"
     with db.engine.begin() as connection:
-        num_green_potions = connection.execute(sqlalchemy.text("")).scalar()
-        gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory ")).scalar()
-    
-    quantity = int(gold/100) 
+        barrel_inventory = connection.execute(sqlalchemy.text(inventory_query))
+        gold = connection.execute(sqlalchemy.text(gold_query)).scalar()
 
+    #available to purchase
+    available = filter_wholesale(wholesale_catalog, gold)
+        #add to the plan and reduce gold by amount
+        #represent ml in list [100,490,060,603] where sum < ml_limit
+        #index == indexof(1) on potion_type
+        #compute new available to puchase
+        #repeat until ml_limit is hit or no potions are available
 
-    if num_green_potions < 10 and quantity > 0 :
-        purchase_sku = "SMALL_GREEN_BARREL"
-        green_barrel = {
-            "sku": purchase_sku,
-            "quantity": quantity,
-        }
-        plan.append(green_barrel)
+    return plan
 
-    #Need to return empty list when no purchase is made. []
+def filter_wholesale(catalog, gold):
+    """"returns the barrels available to buy with current gold count"""
+    plan = []
+    for barrel in catalog:
+        if barrel.price < gold:
+            plan.append(barrel)
     return plan
 
 """
