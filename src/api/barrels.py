@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from src.api import auth
 import sqlalchemy
+from sqlalchemy import text
 from src import database as db
 
 router = APIRouter(
@@ -20,19 +21,33 @@ class Barrel(BaseModel):
 @router.post("/deliver/{order_id}")
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ """
-
-    #update num_green_ml manually
-    if barrels_delivered[0] != "None":
-        with db.engine.begin() as connection:
-            connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = 500"))
-            connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold - {100}"))
-        print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
+    with db.engine.begin() as connection:
+        for barrel in barrels_delivered:
+            #Getting information
+            gold_query = "SELECT gold FROM shop_balance"
+            gold = connection.execute(sqlalchemy.text(gold_query)).scalar()
+            count_query = text("SELECT count FROM barrel_inventory WHERE potion_type = :potion_type")
+            count = connection.execute(count_query, {"potion_type": barrel.potion_type}).scalar()
+            
+            #updating
+            gold -= (barrel.quantity * barrel.price)
+            connection.execute(sqlalchemy.text(f"UPDATE shop_balance SET gold = {gold}"))
+            
+            count += (barrel.quantity * barrel.ml_per_barrel)
+            update_query = text(""" UPDATE barrel_inventory SET count = :new_quantity
+            WHERE potion_type = :potion_type
+            """)
+            connection.execute(update_query, {"new_quantity": count, "potion_type": barrel.potion_type})
+    
+    print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
 
     return "OK"
 
 # Gets called once a day
 @router.post("/plan")
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
+
+    #TODO: Make this readable :)
 
     #print(wholesale_catalog)
     ml_limit = 10000 #temp soultion -> should be a function call
