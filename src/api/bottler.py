@@ -45,22 +45,14 @@ def get_bottle_plan():
     Go from barrel to bottle.
     """
     plan = []
-    potions = 0
-    # Each bottle has a quantity of what proportion of red, blue, and
-    # green potion to add.
-    # Expressed in integers from 1 to 100 that must sum up to 100.
-    # Initial logic: bottle all barrels into red potions.
+    potion_limit = 50 #Should be a function call
+    potion_count_query = "SELECT SUM (quantity) FROM potion_inventory"
+
     with db.engine.begin() as connection:
-        num_ml = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar()
-    if num_ml > 0:
-        potions = num_ml//100
-    if potions > 0:
-        green_plan = {
-            "potion_type": [0, 100, 0, 0],
-            "quantity": potions,
-        }
-        plan.append(green_plan)
+        potion_count = connection.execute(sqlalchemy.text(potion_count_query)).scalar()
     
+    print(potion_count)
+
     return plan
 
 
