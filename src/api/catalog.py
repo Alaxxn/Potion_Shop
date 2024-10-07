@@ -36,6 +36,6 @@ def get_catalog():
                 sku_value = potion_dict["sku"]
                 update_query = "UPDATE potion_inventory SET in_catalog = True WHERE sku = :sku"
                 connection.execute(sqlalchemy.text(update_query), {"sku": sku_value})
-    
+    print(catalog)
     return catalog
 
