@@ -22,7 +22,7 @@ def get_catalog():
         catalog.append(potion_dict)
 
 
-    #TODO:Top selling potions should take priority
+    #TODO:Top selling potions for that day should take priority
 
 
     #Filling the catalog with potions that have largest quantity

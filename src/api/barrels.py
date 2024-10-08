@@ -48,6 +48,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
 
     #TODO: Make this readable :)
+    #TODO: Should consider buying next days customer bias.
 
     #print(wholesale_catalog)
     wholesale_catalog = wholesale_catalog_request.copy()
