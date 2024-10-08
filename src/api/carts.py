@@ -93,25 +93,20 @@ def post_visits(visit_id: int, customers: list[Customer]):
         for user in customers_dict:
             insert_user = text("INSERT INTO customer(name,class,level) VALUES (:customer_name, :character_class , :level)")
             connection.execute(insert_user, user)
-
     print(customers)
-
     return "OK"
 
 
 @router.post("/")
 def create_cart(new_cart: Customer):
-    """
-    class Customer(BaseModel):
-    customer_name: str
-    character_class: str
-    level: int
-    """
-    global carts
-    carts.append([])
-    id = len(carts) - 1
-    print(f"CARTS IN QUEUE: {carts}")
-    return {"cart_id": id}
+    
+    with db.engine.begin() as connection:
+        id_query = text("SELECT id FROM customer WHERE name = :name AND level = :level")
+        cust_id = connection.execute(id_query, {"name": new_cart.customer_name, "level": new_cart.level}).scalar()
+        new_cart_query = text("INSERT INTO carts(customer_id) VALUES (:customer_id) RETURNING id")
+        cart_id = connection.execute(new_cart_query, {"customer_id": cust_id}).scalar()
+
+    return cart_id
 
 
 class CartItem(BaseModel):
