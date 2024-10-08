@@ -145,9 +145,14 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         for row in cart_items:
             cost_query = text("SELECT price FROM potion_inventory WHERE sku = :sku")
             cost = connection.execute(cost_query, {"sku": row[0]}).scalar()
+            
             potion_count = row[1]
+            print("potion_count",potion_count)
             gold += potion_count * cost
+            print("cost: ", potion_count * cost)
             potions_bought += potion_count
+        update_gold = text("UPDATE shop_balance SET gold = :gold")
+        connection.execute(update_gold, {"gold": gold})
 
     total_gold = gold - initial_gold
     print(potions_bought)
