@@ -67,18 +67,12 @@ def get_bottle_plan():
     for barrel in barrel_inventory: #barrel = (potion_type, count)
         index = (barrel[0].index(1))
         inventory[index] = barrel[1] 
-        
-    count = 0
+    
 
-    while potions_available_to_make > 0 and can_make(inventory) and count < 5:
+    while potions_available_to_make > 0 and can_make(inventory):
         max_index = inventory.index(max(inventory)) #choose to make from what I have most of
-        print(max_index)
-        print("INSIDE WHILE")
         for potion in potions: #bottles a new potion
-            print(potion)
-            print("INSIDE FOR")
             potion_index = potion["potion_type"].index(max(potion["potion_type"]))
-            print(potion_index)
             if max_index == potion_index: #making a new bottle
                 new_bottle = {
                     "sku": potion["sku"]
@@ -86,12 +80,9 @@ def get_bottle_plan():
                 plan.append(new_bottle)
                 for i in range(len(inventory)): #reducing barrels ml
                     inventory[i] -= potion["potion_type"][i]
-                print("POTION MADE")
+                print(inventory)
                 potions_available_to_make -= 1
                 break #breaks search for potion
-        count += 1
-           
-    print(plan)
 
     final_plan = reduce_plan(plan)
     print
