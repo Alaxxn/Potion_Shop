@@ -93,7 +93,7 @@ def post_visits(visit_id: int, customers: list[Customer]):
         for user in customers_dict:
             insert_user = text("INSERT INTO customer(name,class,level) VALUES (:customer_name, :character_class , :level)")
             connection.execute(insert_user, user)
-    print(customers)
+
     return "OK"
 
 
@@ -117,7 +117,6 @@ class CartItem(BaseModel):
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ 
     """
-
     with db.engine.begin() as connection:
         #making cart_item
         cart_item_query = text("INSERT INTO cart_item(cart_id, sku, quantity) VALUES (:cart_id, :sku, :quantity)")
@@ -135,7 +134,7 @@ class CartCheckout(BaseModel):
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
     #TODO:add a check if this cart has already checked out before. (failed request)
-    
+
     potions_bought = 0
     with db.engine.begin() as connection:
         cart_items_query = text("SELECT sku, quantity FROM cart_item WHERE cart_id = :cart_id")
@@ -157,13 +156,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         connection.execute(update_gold, {"gold": gold})
 
     total_gold = gold - initial_gold
-    print(potions_bought)
-    print("Initial gold:", initial_gold)
-    print("after:", gold)
-    
     #TODO:
     #remove cart from carts
     #remove items from cart items
-
-    
     return {"total_potions_bought": potions_bought, "total_gold_paid": total_gold}

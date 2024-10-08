@@ -91,7 +91,6 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
             if wholesale_catalog[i].sku == purchase.sku:
                 wholesale_catalog[i].quantity -= 1
 
-
         #find if I've already purchased this barrel type
         found = False
         for i in range(len(plan)):
@@ -105,14 +104,11 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
 
         print("THE PURCHSE IS: ", purchase)
         available_to_buy = filter_wholesale(wholesale_catalog, gold, inventory, ml_threshold, ml_limit) 
-    
+    print("barrel_plan::")
     print(inventory)
     for item in plan:
         print(item)
-    
-    print("\n")
-    for item in wholesale_catalog:
-        print(item)
+
     return plan
 
 def determine_purchase (available, index):
