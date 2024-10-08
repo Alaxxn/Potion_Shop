@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from src.api import auth
 import sqlalchemy
 from src import database as db
+from sqlalchemy import text
 from collections import Counter
 
 
@@ -21,22 +22,35 @@ class PotionInventory(BaseModel):
 def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int):
     """ """
     with db.engine.begin() as connection:
-            ml_to_use = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar()
-    
-    
-    num_potions = ml_to_use/100
-    potion_type = potions_delivered[0].potion_type
-    greem_ml_used = num_potions * potion_type[1] #Check API spec to make this work
+            barrel_inventory = connection.execute(sqlalchemy.text("SELECT potion_type, count FROM barrel_inventory"))
 
-    print(f"POTION TYPE {potion_type}: QUANTITY IS {num_potions}: GREEN ML USED {greem_ml_used}")
-    print(f"potions delievered: {len(potions_delivered)} order_id: {order_id}")
+    inventory_dict = [] # [170,200,1000,500] < l_limit
+    for barrel in barrel_inventory: #barrel = (potion_type, count)
+        new_entry = {
+            "potion_type": barrel[0],
+            "quantity": barrel[1]
+        }
+        inventory_dict.append(new_entry)    
+ 
+    #updates barrel_inventory values
+    for potion in potions_delivered:
+        for barrel in inventory_dict:
+            i = barrel["potion_type"].index(1)
+            barrel["quantity"] -= potion.potion_type[i] * potion.quantity
+    with db.engine.begin() as connection:
+        for barrel in inventory_dict:
+            update_query = text(""" UPDATE barrel_inventory SET count = :new_quantity
+            WHERE potion_type = :potion_type
+            """)
+            connection.execute(update_query, {"new_quantity": barrel["quantity"], "potion_type": barrel["potion_type"]})
 
-    if num_potions != 0:
-        set_potions = f"UPDATE global_inventory SET num_green_potions = {num_potions}"
-        set_green_ml = f"UPDATE global_inventory SET num_green_ml = num_green_ml - {greem_ml_used}"
-        with db.engine.begin() as connection:
-            connection.execute(sqlalchemy.text(set_potions))
-            connection.execute(sqlalchemy.text(set_green_ml))
+    #update potion_inventory values
+    with db.engine.begin() as connection:
+        for potion in potions_delivered:
+            update_query = text(""" UPDATE potion_inventory SET quantity = quantity + :new_quantity
+            WHERE potion_type = :potion_type
+            """)
+            connection.execute(update_query, {"new_quantity": potion.quantity, "potion_type": potion.potion_type})
 
     return "OK"
 
@@ -102,9 +116,7 @@ def can_make(inventory):
     """THIS ONLY WORKS FOR PURE POTIONS"""
     for ml_amount in inventory:
         if ml_amount >= 100:
-            print("OKAY TO MAKE POTIONS", inventory)
             return True
-    print("CANNOT MAKE POTIONS")
     return False
     
 def reduce_plan( plan: list):
