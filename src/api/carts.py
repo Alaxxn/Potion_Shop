@@ -99,7 +99,7 @@ def post_visits(visit_id: int, customers: list[Customer]):
 
 @router.post("/")
 def create_cart(new_cart: Customer):
-    
+
     with db.engine.begin() as connection:
         id_query = text("SELECT id FROM customer WHERE name = :name AND level = :level")
         cust_id = connection.execute(id_query, {"name": new_cart.customer_name, "level": new_cart.level}).scalar()
@@ -117,12 +117,15 @@ class CartItem(BaseModel):
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ 
     """
+
     with db.engine.begin() as connection:
-        green_pots = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory")).scalar()
-        if green_pots >= cart_item.quantity:
-            connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = num_green_potions - {cart_item.quantity}"))
-            carts[cart_id] = cart_item.quantity
-    print(carts)
+        #making cart_item
+        cart_item_query = text("INSERT INTO cart_item(cart_id, sku, quantity) VALUES (:cart_id, :sku, :quantity)")
+        connection.execute(cart_item_query, {"cart_id": cart_id, "sku": item_sku, "quantity": cart_item.quantity})
+        #removing quantity
+        update_potions = text("UPDATE potion_inventory SET quantity = quantity - :order_quantity WHERE sku = :sku ")
+        connection.execute(update_potions, {"sku": item_sku, "order_quantity": cart_item.quantity})
+
     return "OK"
 
 class CartCheckout(BaseModel):
@@ -131,6 +134,11 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
+
+    #Select all items in the cart
+    #remove cart from carts
+    #remove items from cart items
+    #compute gold made 
     num_purchased = carts[cart_id]
     total_gold = num_purchased * 24    
     gold_update = f"UPDATE global_inventory SET gold = gold + {total_gold}"
