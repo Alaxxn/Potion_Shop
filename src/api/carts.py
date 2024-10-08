@@ -134,6 +134,8 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
+    #TODO:add a check if this cart has already checked out before. (failed request)
+    
     potions_bought = 0
     with db.engine.begin() as connection:
         cart_items_query = text("SELECT sku, quantity FROM cart_item WHERE cart_id = :cart_id")
