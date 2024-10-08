@@ -4,6 +4,7 @@ from src.api import auth
 from enum import Enum
 import sqlalchemy
 from src import database as db
+from sqlalchemy import text
 
 router = APIRouter(
     prefix="/carts",
@@ -74,14 +75,25 @@ class Customer(BaseModel):
     character_class: str
     level: int
 
-carts = []
 @router.post("/visits/{visit_id}")
 def post_visits(visit_id: int, customers: list[Customer]):
     """
     Which customers visited the shop today?
     """
-    global carts
-    carts = []
+    customers_dict = []
+    for user in customers:
+        new_user = {
+            "customer_name": user.customer_name,
+            "character_class": user.character_class,
+            "level": user.level
+        }
+        customers_dict.append(new_user)
+    
+    with db.engine.begin() as connection:
+        for user in customers_dict:
+            insert_user = text("INSERT INTO customer(name,class,level) VALUES (:customer_name, :character_class , :level)")
+            connection.execute(insert_user, user)
+
     print(customers)
 
     return "OK"
