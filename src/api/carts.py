@@ -99,13 +99,15 @@ def post_visits(visit_id: int, customers: list[Customer]):
 
 @router.post("/")
 def create_cart(new_cart: Customer):
-
+    
+    print(new_cart, "wants to make a cart")
     with db.engine.begin() as connection:
         id_query = text("SELECT id FROM customer WHERE name = :name AND level = :level")
-        cust_id = connection.execute(id_query, {"name": new_cart.customer_name, "level": new_cart.level}).scalar()
+        cust_id = connection.execute(id_query, {"name": new_cart.customer_name, "level": new_cart.level}).scalar_one()
         new_cart_query = text("INSERT INTO carts(customer_id) VALUES (:customer_id) RETURNING id")
         cart_id = connection.execute(new_cart_query, {"customer_id": cust_id}).scalar()
-
+        #use scalar_one
+    print(f"New Cart:{cart_id}, made for  for {new_cart}")
     return cart_id
 
 
@@ -117,6 +119,7 @@ class CartItem(BaseModel):
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ 
     """
+    print(f"cart id: {cart_id}, is buying {cart_item.quantity} {item_sku}")
     with db.engine.begin() as connection:
         #making cart_item
         cart_item_query = text("INSERT INTO cart_item(cart_id, sku, quantity) VALUES (:cart_id, :sku, :quantity)")

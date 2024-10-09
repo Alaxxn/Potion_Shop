@@ -103,8 +103,6 @@ def get_bottle_plan():
                     plan.append(new_bottle)
                 potions_available_to_make -= 1
                 break
-
-    print(plan)
     return plan
 """
 Response**:

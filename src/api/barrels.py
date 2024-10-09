@@ -82,7 +82,6 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
             lowest_index = buy_bool.index(True)
             purchase = determine_purchase(available_to_buy,lowest_index).copy()
 
-        
         gold -= purchase.price
         inventory[lowest_index] += purchase.ml_per_barrel
 
@@ -101,13 +100,12 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
         if not found: #new entry if not
             purchase.quantity = 1
             plan.append(purchase)
-
-        print("THE PURCHSE IS: ", purchase)
         available_to_buy = filter_wholesale(wholesale_catalog, gold, inventory, ml_threshold, ml_limit) 
-    print("barrel_plan::")
-    print(inventory)
+
+    print("Barrels Plan:")
     for item in plan:
         print(item)
+    print("\n")
 
     return plan
 
