@@ -88,20 +88,24 @@ def get_bottle_plan():
         for potion in potions: #bottles a new potion
             potion_index = potion["potion_type"].index(max(potion["potion_type"]))
             if max_index == potion_index: #making a new bottle
+                found = False
                 new_bottle = {
-                    "sku": potion["sku"]
+                    "potion_type": potion["potion_type"],
+                    "quantity" : 1
                 }
-                plan.append(new_bottle)
-                for i in range(len(inventory)): #reducing barrels ml
-                    inventory[i] -= potion["potion_type"][i]
-                print(inventory)
+                for i in range(len(inventory)): #reducing inventory
+                    inventory[i] -= new_bottle["potion_type"][i]
+                for plan_potion in plan: #looking for new potion in plan
+                    if plan_potion["potion_type"] == new_bottle["potion_type"]:
+                        plan_potion["quantity"] += 1
+                        found = True
+                if not found:
+                    plan.append(new_bottle)
                 potions_available_to_make -= 1
-                break #breaks search for potion
+                break
 
-    final_plan = reduce_plan(plan)
-    print
-    return final_plan
-
+    print(plan)
+    return plan
 """
 Response**:
 [
@@ -118,24 +122,7 @@ def can_make(inventory):
         if ml_amount >= 100:
             return True
     return False
-    
-def reduce_plan( plan: list):
-    """Removes duplicate dictionaries from a list and keeps a count."""
 
-    result = []
-    counts = Counter()
-
-    for dict_item in plan:
-        # Convert dictionary to a hashable tuple for counting
-        hashable_dict = tuple(sorted(dict_item.items())) 
-        counts[hashable_dict] += 1
-
-    for hashable_dict, count in counts.items():
-        # Convert hashable tuple back to dictionary
-        dict_item = dict(hashable_dict) 
-        result.append({**dict_item, 'quantity': count})
-
-    return result
 
 if __name__ == "__main__":
     print(get_bottle_plan())
