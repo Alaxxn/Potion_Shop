@@ -107,8 +107,8 @@ def create_cart(new_cart: Customer):
         cart_id = connection.execute(new_cart_query, {"customer_id": cust_id}).scalar()
         #use scalar_one
     print(f"New Cart:{cart_id}, made for  for {new_cart}")
-    print(type(str(cart_id)))
-    return { "cart_id":  str(cart_id)}
+    
+    return { "cart_id":  cart_id}
 
 
 class CartItem(BaseModel):
