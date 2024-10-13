@@ -104,15 +104,7 @@ def get_bottle_plan():
                 potions_available_to_make -= 1
                 break
     return plan
-"""
-Response**:
-[
-    {
-        "sku": "string", /* Must match a sku from the catalog just passed in this call */
-        "quantity": "integer" /* A number between 1 and the quantity available for sale */
-    }
-]
-"""
+
 
 def can_make(inventory):
     """THIS ONLY WORKS FOR PURE POTIONS"""

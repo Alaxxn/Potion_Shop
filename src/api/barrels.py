@@ -4,6 +4,7 @@ from src.api import auth
 import sqlalchemy
 from sqlalchemy import text
 from src import database as db
+import math
 
 router = APIRouter(
     prefix="/barrels",
@@ -100,25 +101,28 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
         if not found: #new entry if not
             purchase.quantity = 1
             plan.append(purchase)
+        print(purchase)
         available_to_buy = filter_wholesale(wholesale_catalog, gold, inventory, ml_threshold, ml_limit) 
 
     print("Barrels Plan:")
     for item in plan:
         print(item)
-    print("\n")
-
+    
     return plan
 
-def determine_purchase (available, index):
-    """ given potion type, and index this returns the heighest value from barrel list"""
-    list_match = []
+def determine_purchase (available_to_buy, priority_index):
+    """ Given a list of available potions, and potion type_index returns the heighest value from barrel list"""
+    print("AVAILABLE TO BUY:")
+    best_purchase = {} 
+    best_value = math.inf
+    for barrel in available_to_buy:
+        if barrel.potion_type.index(1) == priority_index:
+            curr_value = (barrel.price/barrel.ml_per_barrel)
+            if curr_value < best_value: #lowest cost/ml
+                best_value = curr_value
+                best_purchase = barrel
 
-    for barrel in available:
-        if barrel.potion_type.index(1) == index:
-            list_match.append(barrel)
-    
-    purchase = list_match[-1]
-    return purchase
+    return best_purchase
 
 def in_catalog (available):
     available_bool = [False,False,False,False]
