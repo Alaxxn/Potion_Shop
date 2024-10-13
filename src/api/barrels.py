@@ -52,7 +52,15 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
     #TODO: Should consider buying next days customer bias.
 
     #print(wholesale_catalog)
-    wholesale_catalog = wholesale_catalog_request.copy()
+    unfiltered_catalog = wholesale_catalog_request.copy()
+    wholesale_catalog = []
+    max_ml_value = 0.3
+    for item in unfiltered_catalog:
+        curr_value = item.price/item.ml_per_barrel
+        if curr_value < max_ml_value: #Making sure we don't buy small barrels
+            wholesale_catalog.append(item)
+    print(wholesale_catalog)
+
     ml_limit = 10000 #temp soultion -> should be a function call
     ml_threshold = ml_limit//4
     plan = []
@@ -101,18 +109,16 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
         if not found: #new entry if not
             purchase.quantity = 1
             plan.append(purchase)
-        print(purchase)
-        available_to_buy = filter_wholesale(wholesale_catalog, gold, inventory, ml_threshold, ml_limit) 
 
-    print("Barrels Plan:")
+        available_to_buy = filter_wholesale(wholesale_catalog, gold, inventory, ml_threshold, ml_limit) 
     for item in plan:
-        print(item)
+        print(f"Buying {item.quantity} {item.sku} Cost : {item.quantity * item.price}")
+    print(inventory)
     
     return plan
 
 def determine_purchase (available_to_buy, priority_index):
     """ Given a list of available potions, and potion type_index returns the heighest value from barrel list"""
-    print("AVAILABLE TO BUY:")
     best_purchase = {} 
     best_value = math.inf
     for barrel in available_to_buy:
