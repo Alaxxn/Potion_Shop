@@ -9,9 +9,11 @@ def get_catalog():
     catalog = []
 
     with db.engine.begin() as connection:
-        remove_catalog = " UPDATE potion_inventory SET in_catalog = False WHERE quantity <= 0"
+        remove_catalog = " UPDATE potion_inventory \
+        SET in_catalog = False WHERE quantity = 0"
         connection.execute(sqlalchemy.text(remove_catalog))
-        inv_quer =  "SELECT sku, name, quantity, price, potion_type  FROM potion_inventory WHERE in_catalog = True AND quantity > 0"
+        inv_quer =  "SELECT sku, name, quantity, price, potion_type \
+        FROM potion_inventory WHERE in_catalog = True"
         potions = connection.execute(sqlalchemy.text(inv_quer))
     
     #building catalog
@@ -34,9 +36,8 @@ def get_catalog():
             for potion in additional_potions:
                 potion_dict = potion._mapping
                 catalog.append(potion_dict)
-                sku_value = potion_dict["sku"]
                 update_query = "UPDATE potion_inventory SET in_catalog = True WHERE sku = :sku"
-                connection.execute(sqlalchemy.text(update_query), {"sku": sku_value})
+                connection.execute(sqlalchemy.text(update_query), {"sku": potion_dict["sku"]})
                 
     return catalog
 
