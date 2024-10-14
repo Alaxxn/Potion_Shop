@@ -161,4 +161,4 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     #TODO:
     #remove cart from carts
     #remove items from cart items
-    return {"total_potions_bought": potions_bought, "total_gold_paid": total_gold}
+    return {"total_potions_bought": potions_bought, "total_gold_paid": total_gold_paid}
