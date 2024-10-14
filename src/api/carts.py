@@ -89,6 +89,7 @@ def post_visits(visit_id: int, customers: list[Customer]):
         }
         customers_dict.append(new_user)
     with db.engine.begin() as connection:
+        connection.execute(sqlalchemy.text("DELETE FROM Customer;"))
         for user_insert in customers_dict:
             insert_user = text("INSERT INTO customer(name,class,level) VALUES (:customer_name, :character_class , :level)")
             connection.execute(insert_user, user_insert)
@@ -98,7 +99,7 @@ def post_visits(visit_id: int, customers: list[Customer]):
 
 @router.post("/")
 def create_cart(new_cart: Customer):
-
+    
     print(new_cart, "wants to make a cart")
     with db.engine.begin() as connection:
         id_query = text("SELECT id FROM customer WHERE name = :name AND level = :level")
