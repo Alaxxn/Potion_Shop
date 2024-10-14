@@ -90,6 +90,7 @@ def post_visits(visit_id: int, customers: list[Customer]):
         customers_dict.append(new_user)
     with db.engine.begin() as connection:
         connection.execute(sqlalchemy.text("DELETE FROM Customer;"))
+        #TODO: copy table to order history if purchased = True for old customers
         for user_insert in customers_dict:
             insert_user = text("INSERT INTO customer(name,class,level) VALUES (:customer_name, :character_class , :level)")
             connection.execute(insert_user, user_insert)
@@ -140,26 +141,23 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     #TODO:add a check if this cart has already checked out before. (failed request)
 
     potions_bought = 0
-    with db.engine.begin() as connection:
-        cart_items_query = text("SELECT sku, quantity FROM cart_item WHERE cart_id = :cart_id")
-        gold_query = "SELECT gold FROM shop_balance"
-        gold = connection.execute(sqlalchemy.text(gold_query)).scalar()
-        initial_gold=gold
-        cart_items = connection.execute(cart_items_query, {"cart_id": cart_id})
-    
-        for row in cart_items:
-            cost_query = text("SELECT price FROM potion_inventory WHERE sku = :sku")
-            cost = connection.execute(cost_query, {"sku": row[0]}).scalar()
-            
-            potion_count = row[1]
-            print("potion_count",potion_count)
-            gold += potion_count * cost
-            print("cost: ", potion_count * cost)
-            potions_bought += potion_count
-        update_gold = text("UPDATE shop_balance SET gold = :gold")
-        connection.execute(update_gold, {"gold": gold})
+    total_gold_paid = 0
 
-    total_gold = gold - initial_gold
+    with db.engine.begin() as connection:
+        #retrieve cart items
+        cart_items_query = text("SELECT sku, quantity FROM cart_item WHERE cart_id = :cart_id")
+        cart_items = connection.execute(cart_items_query, {"cart_id": cart_id})
+        #compute gold_paid and potion count
+        for row in cart_items:
+            sku, potion_count = row
+            cost_query = text("SELECT price FROM potion_inventory WHERE sku = :sku")
+            cost = connection.execute(cost_query, {"sku": sku}).scalar()
+            total_gold_paid += (potion_count * cost)
+            potions_bought += potion_count
+        
+        update_gold = text("UPDATE shop_balance SET gold = gold + gold_paid")
+        connection.execute(update_gold, {"gold_paid": total_gold_paid})
+
     #TODO:
     #remove cart from carts
     #remove items from cart items
