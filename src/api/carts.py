@@ -155,7 +155,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             total_gold_paid += (potion_count * cost)
             potions_bought += potion_count
         
-        update_gold = text("UPDATE shop_balance SET gold = gold + gold_paid")
+        update_gold = text("UPDATE shop_balance SET gold = gold + :gold_paid")
         connection.execute(update_gold, {"gold_paid": total_gold_paid})
 
     #TODO:
