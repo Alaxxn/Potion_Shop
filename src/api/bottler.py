@@ -33,7 +33,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
 
 
     with db.engine.begin() as connection:
-            barrel_inventory = connection.execute(sqlalchemy.text("SELECT potion_type, count FROM barrel_inventory"))
+            barrel_inventory = connection.execute(sqlalchemy.text("SELECT potion_type, quantity FROM barrel_inventory"))
 
     inventory_dict = [] 
     for barrel in barrel_inventory:
@@ -50,7 +50,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
             barrel["quantity"] -= potion.potion_type[i] * potion.quantity
     with db.engine.begin() as connection:
         for barrel in inventory_dict:
-            update_query = text(""" UPDATE barrel_inventory SET count = :new_quantity
+            update_query = text(""" UPDATE barrel_inventory SET quantity = :new_quantity
             WHERE potion_type = :potion_type
             """)
             connection.execute(update_query, {"new_quantity": barrel["quantity"], "potion_type": barrel["potion_type"]})
@@ -67,7 +67,7 @@ def get_bottle_plan():
                                
     with db.engine.begin() as connection:
         curr_count = connection.execute(sqlalchemy.text("SELECT SUM (quantity) FROM potion_inventory")).scalar()
-        barrel_obj = connection.execute(sqlalchemy.text("SELECT potion_type, count FROM barrel_inventory"))
+        barrel_obj = connection.execute(sqlalchemy.text("SELECT potion_type, quantity FROM barrel_inventory"))
         potion_obj = connection.execute(sqlalchemy.text("SELECT potion_type FROM potion_inventory ORDER BY quantity"))
     
     potions_available_to_make = potion_limit - curr_count
@@ -78,7 +78,7 @@ def get_bottle_plan():
         if potion_to_make != None:
             for barrel in inventory: #reducing barrel inventory
                 index = barrel["potion_type"].index(1)
-                barrel["count"] -= potion_to_make["potion_type"][index]
+                barrel["quantity"] -= potion_to_make["potion_type"][index]
             found = False
             for potion in plan: #looking for potion in existing plan
                 if potion["potion_type"] == potion_to_make["potion_type"]:
@@ -107,7 +107,7 @@ def parse_info (potions_obj, inventory_obj):
     for barrel in inventory_obj:
         new_bar = { 
             "potion_type": barrel[0],
-            "count": barrel[1] 
+            "quantity": barrel[1] 
             }
         inventory.append(new_bar)
 
@@ -119,7 +119,7 @@ def compute_potion(inventory, potions):
         can_make = True
         for barrel in inventory:
             index = barrel["potion_type"].index(1)
-            if barrel["count"] < potion["potion_type"][index]:
+            if barrel["quantity"] < potion["potion_type"][index]:
                 can_make = False
         if can_make:
             return potion

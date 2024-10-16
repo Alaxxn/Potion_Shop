@@ -16,7 +16,7 @@ def get_inventory():
     """ """
     with db.engine.begin() as connection:
         curr_count = connection.execute(sqlalchemy.text("SELECT SUM (quantity) FROM potion_inventory")).scalar()
-        num_ml = connection.execute(sqlalchemy.text("SELECT SUM(count) FROM barrel_inventory")).scalar()
+        num_ml = connection.execute(sqlalchemy.text("SELECT SUM(quantity) FROM barrel_inventory")).scalar()
         gold = connection.execute(sqlalchemy.text("SELECT gold FROM shop_balance")).scalar()
 
     return {"number_of_potions": curr_count, "ml_in_barrels": num_ml, "gold": gold}

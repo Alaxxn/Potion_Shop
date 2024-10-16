@@ -22,23 +22,26 @@ class Barrel(BaseModel):
 @router.post("/deliver/{order_id}")
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ """
+
+    #make column with the best day to buy. refrence that to determine 
+    # what I should buy on current day
     with db.engine.begin() as connection:
         for barrel in barrels_delivered:
             #Getting information
             gold_query = "SELECT gold FROM shop_balance"
             gold = connection.execute(sqlalchemy.text(gold_query)).scalar()
-            count_query = text("SELECT count FROM barrel_inventory WHERE potion_type = :potion_type")
-            count = connection.execute(count_query, {"potion_type": barrel.potion_type}).scalar()
+            quantity_query = text("SELECT quantity FROM barrel_inventory WHERE potion_type = :potion_type")
+            quantity = connection.execute(quantity_query, {"potion_type": barrel.potion_type}).scalar()
             
             #updating
             gold -= (barrel.quantity * barrel.price)
             connection.execute(sqlalchemy.text(f"UPDATE shop_balance SET gold = {gold}"))
             
-            count += (barrel.quantity * barrel.ml_per_barrel)
-            update_query = text(""" UPDATE barrel_inventory SET count = :new_quantity
+            quantity += (barrel.quantity * barrel.ml_per_barrel)
+            update_query = text(""" UPDATE barrel_inventory SET quantity = :new_quantity
             WHERE potion_type = :potion_type
             """)
-            connection.execute(update_query, {"new_quantity": count, "potion_type": barrel.potion_type})
+            connection.execute(update_query, {"new_quantity": quantity, "potion_type": barrel.potion_type})
     
     print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
 
@@ -67,13 +70,13 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
 
     #initializing
     with db.engine.begin() as connection:
-        inventory_query = "SELECT potion_type, count FROM barrel_inventory"
+        inventory_query = "SELECT potion_type, quantity FROM barrel_inventory"
         gold_query = "SELECT gold FROM shop_balance"
         barrel_inventory = connection.execute(sqlalchemy.text(inventory_query))
         gold = connection.execute(sqlalchemy.text(gold_query)).scalar()
 
     inventory = [0,0,0,0] # [170,200,1000,500] < l_limit
-    for barrel in barrel_inventory: #barrel = (potion_type, count)
+    for barrel in barrel_inventory: #barrel = (potion_type, quantity)
         index = (barrel[0].index(1))
         inventory[index] = barrel[1]    
     
