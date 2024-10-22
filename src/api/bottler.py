@@ -5,7 +5,6 @@ from src.api import auth
 import sqlalchemy
 from src import database as db
 from sqlalchemy import text
-from collections import Counter
 
 
 router = APIRouter(
@@ -29,7 +28,6 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
             update = text("UPDATE potion_inventory SET quantity = quantity + :quantity\
             WHERE potion_type = :potion_type ")
             connection.execute(update, potion_dict)
-
 
 
     with db.engine.begin() as connection:
