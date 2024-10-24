@@ -25,6 +25,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 
     #make column with the best day to buy. refrence that to determine 
     # what I should buy on current day
+    print(f"BARRELS DELIVERED: {barrels_delivered}")
     with db.engine.begin() as connection:
         for barrel in barrels_delivered:
             #Getting information
@@ -43,7 +44,8 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
             """)
             connection.execute(update_query, {"new_quantity": quantity, "potion_type": barrel.potion_type})
     
-    print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
+    for barrel in barrels_delivered:
+        print(f"BARREL DELIVERED: {barrel}")
 
     return "OK"
 
@@ -115,8 +117,8 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
 
         available_to_buy = filter_wholesale(wholesale_catalog, gold, inventory, ml_threshold, ml_limit) 
     for item in plan:
-        print(f"Buying {item.quantity} {item.sku} Cost : {item.quantity * item.price}")
-    print(inventory)
+        print(f"WANT TO BUY {item.quantity} {item.sku} and it will cost ={item.quantity * item.price}")
+    print(f"New inventoy Space is {inventory}")
     
     return plan
 
