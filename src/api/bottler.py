@@ -20,40 +20,40 @@ class PotionInventory(BaseModel):
 @router.post("/deliver/{order_id}")
 def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int):
     """ """
-    print(f"bottles delivers{potions_delivered}\n")
-    
-    #update potion_inventory values
-    with db.engine.begin() as connection:
-        for potion in potions_delivered:
-            potion_dict = potion.__dict__ 
-            update = text("UPDATE potion_inventory SET quantity = quantity + :quantity\
-            WHERE potion_type = :potion_type ")
-            connection.execute(update, potion_dict)
 
-
-    with db.engine.begin() as connection:
-            barrel_inventory = connection.execute(sqlalchemy.text("SELECT potion_type, quantity FROM barrel_inventory"))
-
-    inventory_dict = [] 
-    for barrel in barrel_inventory:
-        new_entry = {
-            "potion_type": barrel[0],
-            "quantity": barrel[1]
-        }
-        inventory_dict.append(new_entry)    
- 
-    #updates barrel_inventory values
+    potions_list_dicts = []
+    barrel_dicts = [
+        {"potion_type": [1,0,0,0], "ml_used": 0},
+        {"potion_type": [0,1,0,0], "ml_used": 0},
+        {"potion_type": [0,0,1,0], "ml_used": 0},
+        {"potion_type": [0,0,0,1], "ml_used": 0},
+    ]
     for potion in potions_delivered:
-        for barrel in inventory_dict:
-            i = barrel["potion_type"].index(1)
-            barrel["quantity"] -= potion.potion_type[i] * potion.quantity
+        new = {
+            "potion_type": potion.potion_type,
+            "additional_quantity" : potion.quantity
+        }
+        for i in range (len(barrel_dicts)): #setting the used quantity
+            barrel_dicts[i]["ml_used"] += (potion.potion_type[i] * potion.quantity)
+        potions_list_dicts.append(new)
+    
     with db.engine.begin() as connection:
-        for barrel in inventory_dict:
-            update_query = text(""" UPDATE barrel_inventory SET quantity = :new_quantity
-            WHERE potion_type = :potion_type
-            """)
-            connection.execute(update_query, {"new_quantity": barrel["quantity"], "potion_type": barrel["potion_type"]})
-
+        update_potions = text("""
+            UPDATE potion_inventory SET quantity = quantity + :additional_quantity
+            WHERE potion_type = :potion_type """)
+        update_ml = text("""
+            UPDATE barrel_inventory SET quantity = quantity - :ml_used
+            WHERE potion_type = :potion_type """)
+        connection.execute(update_potions, potions_list_dicts)
+        connection.execute(update_ml, barrel_dicts)
+    
+    print("\nbottles delivers:")
+    for potion in potions_delivered:
+        print(potion)
+    print("\nBarrels Used:")
+    for barrel in barrel_dicts:
+        print(barrel)
+    
     return "OK"
 
 @router.post("/plan")
