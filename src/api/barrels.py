@@ -22,27 +22,27 @@ class Barrel(BaseModel):
 @router.post("/deliver/{order_id}")
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ """
-
     #make column with the best day to buy. refrence that to determine 
     # what I should buy on current day
-    print(f"BARRELS DELIVERED: {barrels_delivered}")
-    with db.engine.begin() as connection:
-        for barrel in barrels_delivered:
-            #Getting information
-            gold_query = "SELECT gold FROM shop_balance"
-            gold = connection.execute(sqlalchemy.text(gold_query)).scalar()
-            quantity_query = text("SELECT quantity FROM barrel_inventory WHERE potion_type = :potion_type")
-            quantity = connection.execute(quantity_query, {"potion_type": barrel.potion_type}).scalar()
-            
-            #updating
-            gold -= (barrel.quantity * barrel.price)
-            connection.execute(sqlalchemy.text(f"UPDATE shop_balance SET gold = {gold}"))
-            
-            quantity += (barrel.quantity * barrel.ml_per_barrel)
-            update_query = text(""" UPDATE barrel_inventory SET quantity = :new_quantity
+    
+    barrels_delivered_dict = []
+    total_cost = 0
+    for barrel in barrels_delivered:
+        new = {
+            "additional_ml" : barrel.ml_per_barrel * barrel.quantity,
+            "potion_type" : barrel.potion_type
+        }
+        barrels_delivered_dict.append(new)
+        total_cost += (barrel.price * barrel.quantity) 
+
+    with db.engine.begin() as connection:        
+        connection.execute(text("UPDATE shop_balance SET gold = gold - :cost"), {"cost": total_cost})
+        update_ml= text("""
+            UPDATE barrel_inventory 
+            SET quantity = quantity + :additional_ml
             WHERE potion_type = :potion_type
             """)
-            connection.execute(update_query, {"new_quantity": quantity, "potion_type": barrel.potion_type})
+        connection.execute(update_ml, barrels_delivered_dict)
     
     for barrel in barrels_delivered:
         print(f"BARREL DELIVERED: {barrel}")
@@ -157,6 +157,7 @@ def filter_wholesale(catalog, gold, inventory, threshold, limit):
     return available_to_buy
 
 
+
 """
 [Barrel(sku='SMALL_RED_BARREL', ml_per_barrel=500, potion_type=[1, 0, 0, 0], price=100, quantity=10), 
 Barrel(sku='SMALL_GREEN_BARREL', ml_per_barrel=500, potion_type=[0, 1, 0, 0], price=100, quantity=10), 
@@ -168,5 +169,4 @@ Barrel(sku='LARGE_DARK_BARREL', ml_per_barrel=10000, potion_type=[0, 0, 0, 1], p
 Barrel(sku='LARGE_BLUE_BARREL', ml_per_barrel=10000, potion_type=[0, 0, 1, 0], price=600, quantity=30), 
 Barrel(sku='LARGE_GREEN_BARREL', ml_per_barrel=10000, potion_type=[0, 1, 0, 0], price=400, quantity=30), 
 Barrel(sku='LARGE_RED_BARREL', ml_per_barrel=10000, potion_type=[1, 0, 0, 0], price=500, quantity=30)]
-
 """
