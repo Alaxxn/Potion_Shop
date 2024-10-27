@@ -77,39 +77,31 @@ class Customer(BaseModel):
 
 @router.post("/visits/{visit_id}")
 def post_visits(visit_id: int, customers: list[Customer]):
-    """
-    Which customers visited the shop today?
-    """
-    customers_dict = []
-    for user in customers:
-        new_user = {
-            "customer_name": user.customer_name,
-            "character_class": user.character_class,
-            "level": user.level
-        }
-        customers_dict.append(new_user)
+
+    customers_list = [customer.__dict__ for customer in customers]
+    
     with db.engine.begin() as connection:
         connection.execute(sqlalchemy.text("DELETE FROM Customer;"))
         #TODO: copy table to order history if purchased = True for old customers
-        for user_insert in customers_dict:
-            insert_user = text("INSERT INTO customer(name,class,level) VALUES (:customer_name, :character_class , :level)")
-            connection.execute(insert_user, user_insert)
-
+        insert_user = text("""
+            INSERT INTO customer (name, class, level) 
+            VALUES (:customer_name,:character_class,:level)""")
+        connection.execute(insert_user, customers_list)
+    
     return "OK"
 
 
 @router.post("/")
 def create_cart(new_cart: Customer):
-    
-    print(new_cart, "wants to make a cart")
+
     with db.engine.begin() as connection:
         id_query = text("SELECT id FROM customer WHERE name = :name AND level = :level")
         cust_id = connection.execute(id_query, {"name": new_cart.customer_name, "level": new_cart.level}).scalar_one()
         new_cart_query = text("INSERT INTO carts(customer_id) VALUES (:customer_id) RETURNING id")
         cart_id = connection.execute(new_cart_query, {"customer_id": cust_id}).scalar()
-        #use scalar_one
+
     print(f"New Cart:{cart_id}, made for  for {new_cart}")
-    
+
     return { "cart_id":  cart_id}
 
 

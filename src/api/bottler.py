@@ -72,7 +72,6 @@ def get_bottle_plan():
     potions_available_to_make = potion_limit - curr_count
     potions, inventory = parse_info(potion_obj, barrel_obj)
 
-    print("INVENTORY BEFORE BOTTLING:", inventory)
     while potions_available_to_make > 0:
         potion_to_make = compute_potion(inventory, potions) #returns a potion to make
         if potion_to_make != None:
@@ -90,8 +89,6 @@ def get_bottle_plan():
             potions_available_to_make -= 1
         else: #no potion can be made
             break
-
-    print("INVENTORY AFTER BOTTLING:", inventory)
 
     for potion in plan:
         print(potion)
