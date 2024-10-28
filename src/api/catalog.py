@@ -7,18 +7,16 @@ from . import bottler
 router = APIRouter()
 @router.get("/catalog/", tags=["catalog"])
 def get_catalog():
+
     catalog_limit = 6
     catalog = []
+    bottle_plan = bottler.get_bottle_plan()
 
     with db.engine.begin() as connection:
-        plan = bottler.get_bottle_plan()
-        print("I HAVE BOTTLE PLAN:")
-        print(plan)
-        remove_catalog = " UPDATE potion_inventory \
-        SET in_catalog = False WHERE quantity = 0"
+
+        remove_catalog = " UPDATE potion_inventory SET in_catalog = False WHERE quantity = 0"
         connection.execute(sqlalchemy.text(remove_catalog))
-        inv_quer =  "SELECT sku, name, quantity, price, potion_type \
-        FROM potion_inventory WHERE in_catalog = True"
+        inv_quer =  "SELECT sku, name, quantity, price, potion_type FROM potion_inventory WHERE in_catalog = True"
         potions = connection.execute(sqlalchemy.text(inv_quer))
     
     #building catalog
@@ -46,3 +44,16 @@ def get_catalog():
                 
     return catalog
 
+"""
+```json
+[
+    {
+        "sku": "string", /* Matching regex ^[a-zA-Z0-9_]{1,20}$ */
+        "name": "string",
+        "quantity": "integer", /* Between 1 and 10000 */
+        "price": "integer", /* Between 1 and 500 */
+        "potion_type": [r, g, b, d] /* r, g, b, d are integers that add up to exactly 100 */
+    }
+]
+```
+"""
