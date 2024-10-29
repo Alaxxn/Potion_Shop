@@ -81,13 +81,31 @@ def post_visits(visit_id: int, customers: list[Customer]):
     customers_list = [customer.__dict__ for customer in customers]
     
     with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text("DELETE FROM Customer;"))
-        #TODO: copy table to order history if purchased = True for old customers
+        #Adding last visist to history
+        add_history = text("""
+        INSERT INTO purchase_history
+        (name,class,level,potion_type,quantity, day,hour) 
+        SELECT customer.name, customer.class, customer.level,
+        potion_inventory.potion_type, cart_item.quantity,
+        customer.day, customer.hour
+        FROM customer
+        LEFT JOIN carts ON carts.customer_id = customer.Id
+        LEFT JOIN cart_item ON carts.Id = cart_item.cart_id
+        LEFT JOIN potion_inventory ON cart_item.sku = potion_inventory.sku
+        """)
+        connection.execute(add_history)
+        #reset active customers
+        connection.execute(text("DELETE FROM Customer"))
+        #fill tables
         insert_user = text("""
-            INSERT INTO customer (name, class, level) 
-            VALUES (:customer_name,:character_class,:level)""")
+        INSERT INTO customer (name, class, level) 
+        VALUES (:customer_name,:character_class,:level)""")
         connection.execute(insert_user, customers_list)
-    
+        insert_time = text("""
+        UPDATE customer
+        SET day = current_day.day, hour = current_day.hour
+        FROM current_day""")
+        connection.execute(insert_time)
     return "OK"
 
 
