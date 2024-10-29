@@ -18,7 +18,7 @@ class Timestamp(BaseModel):
 @router.post("/current_time")
 def post_time(timestamp: Timestamp):
     with db.engine.begin() as connection:
-        time = text("INSERT INTO current_day (game_day, game_hour) Values (:day, :hour)")
+        time = text("INSERT INTO days (game_day, game_hour) Values (:day, :hour)")
         connection.execute(time, timestamp.__dict__)
     return "OK"
 
