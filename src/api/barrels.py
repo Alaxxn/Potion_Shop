@@ -66,16 +66,17 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
             wholesale_catalog.append(item)
     print(wholesale_catalog)
 
-    ml_limit = 10000 #temp soultion -> should be a function call
-    ml_threshold = ml_limit//4
-    plan = []
-
     #initializing
     with db.engine.begin() as connection:
         inventory_query = "SELECT potion_type, quantity FROM barrel_inventory"
         gold_query = "SELECT gold FROM shop_balance"
+        ml_query = "SELECT ml_capacity FROM shop_balance"
         barrel_inventory = connection.execute(sqlalchemy.text(inventory_query))
         gold = connection.execute(sqlalchemy.text(gold_query)).scalar()
+        ml_limit = connection.execute(sqlalchemy.text(ml_query)).scalar()
+
+    ml_threshold = ml_limit//4
+    plan = []
 
     inventory = [0,0,0,0] # [170,200,1000,500] < l_limit
     for barrel in barrel_inventory: #barrel = (potion_type, quantity)

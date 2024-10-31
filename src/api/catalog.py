@@ -10,13 +10,17 @@ def get_catalog():
 
     catalog_limit = 6
     catalog = []
-    bottle_plan = bottler.get_bottle_plan()
+    # bottle_plan = bottler.get_bottle_plan()
 
     with db.engine.begin() as connection:
 
-        remove_catalog = " UPDATE potion_inventory SET in_catalog = False WHERE quantity = 0"
-        connection.execute(sqlalchemy.text(remove_catalog))
-        inv_quer =  "SELECT sku, name, quantity, price, potion_type FROM potion_inventory WHERE in_catalog = True"
+        # remove_catalog = " UPDATE potion_inventory SET in_catalog = False WHERE quantity = 0"
+        # connection.execute(sqlalchemy.text(remove_catalog))
+        inv_quer =  """
+        SELECT sku, name, quantity, price, potion_type 
+        FROM potion_inventory 
+        WHERE in_catalog = True
+        LIMIT 6 """
         potions = connection.execute(sqlalchemy.text(inv_quer))
     
     #building catalog
