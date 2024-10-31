@@ -14,8 +14,8 @@ def get_catalog():
 
     with db.engine.begin() as connection:
 
-        # remove_catalog = " UPDATE potion_inventory SET in_catalog = False WHERE quantity = 0"
-        # connection.execute(sqlalchemy.text(remove_catalog))
+        remove_catalog = " UPDATE potion_inventory SET in_catalog = False WHERE quantity = 0"
+        connection.execute(sqlalchemy.text(remove_catalog))
         inv_quer =  """
         SELECT sku, name, quantity, price, potion_type 
         FROM potion_inventory 
