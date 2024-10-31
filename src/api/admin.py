@@ -20,5 +20,8 @@ def reset():
         connection.execute(sqlalchemy.text("UPDATE potion_inventory SET quantity = 0"))
         connection.execute(sqlalchemy.text("UPDATE barrel_inventory SET quantity = 0"))
         connection.execute(sqlalchemy.text("UPDATE shop_balance SET gold = 100"))
+        connection.execute(sqlalchemy.text("UPDATE shop_balance SET ml_capacity = 10000"))
+        connection.execute(sqlalchemy.text("UPDATE shop_balance SET potion_capacity = 50"))
+
     return "Shop Reset"
 
