@@ -13,6 +13,8 @@ def get_catalog():
     # bottle_plan = bottler.get_bottle_plan()
 
     with db.engine.begin() as connection:
+        #FOR MARKET TESTING PURPOSES:
+        connection.execute(sqlalchemy.text("UPDATE potion_inventory SET quantity = 100"))
 
         remove_catalog = " UPDATE potion_inventory SET in_catalog = False WHERE quantity = 0"
         connection.execute(sqlalchemy.text(remove_catalog))
@@ -34,6 +36,7 @@ def get_catalog():
     if len(catalog) < catalog_limit:
         count = catalog_limit - len(catalog)
         with db.engine.begin() as connection:
+
             add_catalog = f"""SELECT  sku, name, quantity, price, potion_type
             FROM potion_inventory
             WHERE in_catalog = False AND quantity > 0
