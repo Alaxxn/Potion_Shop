@@ -61,6 +61,7 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
     POTION_INCREASE = 50
     additional_ml = CAPACITY_INCREASE * capacity_purchase.ml_capacity
     additional_pots = POTION_INCREASE * capacity_purchase.potion_capacity
+    gold_cost = 1000 * (capacity_purchase.ml_capacity + capacity_purchase.potion_capacity)
     with db.engine.begin() as connection:
         update_ml = sqlalchemy.text("""
         UPDATE shop_balance
@@ -70,7 +71,12 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
         UPDATE shop_balance
         SET potion_capacity = potion_capacity + :increase
         """)
+        update_gold = sqlalchemy.text("""
+        UPDATE shop_balance
+        SET gold = gold - :cost
+        """)
         connection.execute(update_ml,{"increase": additional_ml})
+        connection.execute(update_gold,{"cost": gold_cost})
         connection.execute(update_potion,{"increase": additional_pots})
 
 
