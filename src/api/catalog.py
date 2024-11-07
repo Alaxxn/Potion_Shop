@@ -14,15 +14,18 @@ def get_catalog():
 
     with db.engine.begin() as connection:
         #FOR MARKET TESTING PURPOSES:
-        connection.execute(sqlalchemy.text("UPDATE potion_inventory SET quantity = 100"))
-
-        remove_catalog = " UPDATE potion_inventory SET in_catalog = False WHERE quantity = 0"
-        connection.execute(sqlalchemy.text(remove_catalog))
         inv_quer =  """
-        SELECT sku, name, quantity, price, potion_type 
+        with potion_counts as (
+        SELECT potion_type, SUM(change) as quantity
+        FROM potion_ledger
+        GROUP BY potion_type)
+
+        SELECT sku, name, quantity, price, potion_counts.potion_type 
         FROM potion_inventory 
-        WHERE in_catalog = True
-        LIMIT 6 """
+        JOIN potion_counts ON potion_counts.potion_type = potion_inventory.potion_type
+        WHERE in_catalog = True and quantity > 0
+        LIMIT 6 
+        """
         potions = connection.execute(sqlalchemy.text(inv_quer))
     
     #building catalog
@@ -37,11 +40,20 @@ def get_catalog():
         count = catalog_limit - len(catalog)
         with db.engine.begin() as connection:
 
-            add_catalog = f"""SELECT  sku, name, quantity, price, potion_type
-            FROM potion_inventory
-            WHERE in_catalog = False AND quantity > 0
-            ORDER BY quantity DESC
-            LIMIT {count}"""
+            add_catalog = """
+            with potion_counts as (
+            SELECT potion_type, SUM(change) as quantity
+            FROM potion_ledger
+            GROUP BY potion_type)
+
+            SELECT sku, name, quantity, price, potion_counts.potion_type 
+            FROM potion_inventory 
+            JOIN potion_counts ON potion_counts.potion_type = potion_inventory.potion_type
+            WHERE in_catalog = True AND quantity > 0
+            ORDER BY quantity desc
+            LIMIT 2
+            """
+            
             additional_potions = connection.execute(sqlalchemy.text(add_catalog))
             for potion in additional_potions:
                 potion_dict = potion._mapping
