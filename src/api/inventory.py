@@ -17,7 +17,8 @@ def get_inventory():
     with db.engine.begin() as connection:
         curr_count = connection.execute(sqlalchemy.text("SELECT SUM (quantity) FROM potion_inventory")).scalar()
         num_ml = connection.execute(sqlalchemy.text("SELECT SUM(quantity) FROM barrel_inventory")).scalar()
-        gold = connection.execute(sqlalchemy.text("SELECT gold FROM shop_balance")).scalar()
+        gold = connection.execute(sqlalchemy.text("SELECT gold FROM shop
+        ")).scalar()
 
     return {"number_of_potions": curr_count, "ml_in_barrels": num_ml, "gold": gold}
 
@@ -30,7 +31,8 @@ def get_capacity_plan():
     """
 
     with db.engine.begin() as connection:
-        gold = connection.execute(sqlalchemy.text("SELECT gold FROM shop_balance")).scalar()
+        gold = connection.execute(sqlalchemy.text("SELECT gold FROM shop
+        ")).scalar()
     
     #Use 2/3 of funds for purchasing plan
     gold_for_purchase = gold//3
@@ -64,15 +66,18 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
     gold_cost = 1000 * (capacity_purchase.ml_capacity + capacity_purchase.potion_capacity)
     with db.engine.begin() as connection:
         update_ml = sqlalchemy.text("""
-        UPDATE shop_balance
+        UPDATE shop
+        
         SET ml_capacity = ml_capacity + :increase
         """)
         update_potion = sqlalchemy.text("""
-        UPDATE shop_balance
+        UPDATE shop
+        
         SET potion_capacity = potion_capacity + :increase
         """)
         update_gold = sqlalchemy.text("""
-        UPDATE shop_balance
+        UPDATE shop
+        
         SET gold = gold - :cost
         """)
         connection.execute(update_ml,{"increase": additional_ml})
