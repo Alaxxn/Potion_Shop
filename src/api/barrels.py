@@ -68,9 +68,13 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
 
     #initializing
     with db.engine.begin() as connection:
-        inventory_query = "SELECT potion_type, quantity FROM barrel_inventory"
-        gold_query = "SELECT gold FROM shop_balance"
-        ml_query = "SELECT ml_capacity FROM shop_balance"
+        inventory_query = """
+        SELECT potion_type , sum(change) AS quantity
+        FROM barrel_ledger
+        GROUP BY potion_type
+        """
+        gold_query = "SELECT sum(change) FROM gold_ledger"
+        ml_query = "SELECT ml_capacity FROM shop"
         barrel_inventory = connection.execute(sqlalchemy.text(inventory_query))
         gold = connection.execute(sqlalchemy.text(gold_query)).scalar()
         ml_limit = connection.execute(sqlalchemy.text(ml_query)).scalar()
@@ -150,7 +154,7 @@ def filter_wholesale(catalog, gold, inventory, threshold, limit):
     for barrel in catalog:
         if barrel.price <= gold and barrel.quantity > 0:
             index = barrel.potion_type.index(1)
-            temp_barrels = inventory.copy() #worst bug EVER!
+            temp_barrels = inventory.copy()
             temp_barrels[index] += barrel.ml_per_barrel
             if temp_barrels[index] < threshold and sum(temp_barrels) < limit:
                 available_to_buy.append(barrel)
