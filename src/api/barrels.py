@@ -24,25 +24,53 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ """
     #make column with the best day to buy. refrence that to determine 
     # what I should buy on current day
-    
+        
     barrels_delivered_dict = []
-    total_cost = 0
     for barrel in barrels_delivered:
         new = {
             "additional_ml" : barrel.ml_per_barrel * barrel.quantity,
-            "potion_type" : barrel.potion_type
+            "potion_type" : barrel.potion_type,
+            "cost" : barrel.price * barrel.quantity,
+            "text" : f"Puchased {barrel.quantity}: {barrel.potion_type}",
         }
         barrels_delivered_dict.append(new)
-        total_cost += (barrel.price * barrel.quantity) 
 
     with db.engine.begin() as connection:        
-        connection.execute(text("UPDATE shop_balance SET gold = gold - :cost"), {"cost": total_cost})
+        update_gold = text (""" 
+        with day_info as (
+        select day, hour
+        from current_day),      
+
+        gold_insert as (
+        INSERT INTO gold_transactions
+        (description)
+        VALUES (:text)
+        RETURNING id)
+
+        INSERT INTO gold_ledger (transaction_id, change, day, hour)
+        SELECT gold_insert.id, -:cost , day, hour
+        FROM gold_insert
+        CROSS JOIN day_info;
+        """)
         update_ml= text("""
-            UPDATE barrel_inventory 
-            SET quantity = quantity + :additional_ml
-            WHERE potion_type = :potion_type
-            """)
+        with day_info as (
+        select day, hour
+        from current_day),
+                        
+        barrel_transaction as (
+        INSERT INTO barrel_transactions
+        (description)
+        VALUES (:text)
+        RETURNING id)
+
+        INSERT INTO barrel_ledger
+        (potion_type, transaction_id, change, day, hour)
+        SELECT :potion_type, barrel_transaction.id, :additional_ml, day, hour
+        FROM barrel_transaction
+        CROSS JOIN day_info
+        """)
         connection.execute(update_ml, barrels_delivered_dict)
+        connection.execute(update_gold, barrels_delivered_dict)
     
     for barrel in barrels_delivered:
         print(f"BARREL DELIVERED: {barrel}")
