@@ -64,10 +64,16 @@ def get_bottle_plan():
     plan = []
                                
     with db.engine.begin() as connection:
-        curr_count = connection.execute(sqlalchemy.text("SELECT SUM (quantity) FROM potion_inventory")).scalar()
-        barrel_obj = connection.execute(sqlalchemy.text("SELECT potion_type, quantity FROM barrel_inventory"))
-        potion_obj = connection.execute(sqlalchemy.text("SELECT potion_type FROM potion_inventory ORDER BY quantity"))
-        potion_limit = connection.execute(sqlalchemy.text("SELECT potion_capacity FROM shop_balance")).scalar()
+        curr_count = connection.execute(sqlalchemy.text("SELECT SUM (change) FROM potion_ledger")).scalar()
+        barrel_obj = connection.execute(sqlalchemy.text("""
+        SELECT potion_type, SUM(change) as quantity FROM barrel_ledger GROUP BY potion_type"""))
+        potion_obj = connection.execute(sqlalchemy.text("""
+        SELECT potion_type FROM potion_ledger 
+        GROUP BY potion_type
+        ORDER BY sum(change)
+        """))
+        potion_limit = connection.execute(sqlalchemy.text("SELECT potion_capacity FROM shop")).scalar()
+    
     
     potions_available_to_make = potion_limit - curr_count
     potions, inventory = parse_info(potion_obj, barrel_obj)
@@ -90,6 +96,7 @@ def get_bottle_plan():
         else: #no potion can be made
             break
 
+    print("\nBottle Plan:")
     for potion in plan:
         print(potion)
 
