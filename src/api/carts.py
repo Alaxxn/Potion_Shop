@@ -86,14 +86,15 @@ def post_visits(visit_id: int, customers: list[Customer]):
         INSERT INTO purchase_history
         (name,class,level,potion_type,quantity, day,hour) 
         SELECT customer.name, customer.class, customer.level,
-        potion_inventory.potion_type, cart_item.quantity,
+        potion_inventory.potion_type, active_cart_item.quantity,
         customer.day, customer.hour
         FROM customer
-        LEFT JOIN carts ON carts.customer_id = customer.Id
-        LEFT JOIN cart_item ON carts.Id = cart_item.cart_id
-        LEFT JOIN potion_inventory ON cart_item.sku = potion_inventory.sku
+        LEFT JOIN active_carts ON active_carts.customer_id = customer.Id
+        LEFT JOIN active_cart_item ON active_carts.Id = active_cart_item.cart_id
+        LEFT JOIN potion_inventory ON active_cart_item.sku = potion_inventory.sku
         """)
         connection.execute(add_history)
+
         #reset active customers
         connection.execute(text("DELETE FROM Customer"))
         #fill tables
@@ -115,7 +116,7 @@ def create_cart(new_cart: Customer):
     with db.engine.begin() as connection:
         id_query = text("SELECT id FROM customer WHERE name = :name AND level = :level")
         cust_id = connection.execute(id_query, {"name": new_cart.customer_name, "level": new_cart.level}).scalar_one()
-        new_cart_query = text("INSERT INTO carts(customer_id) VALUES (:customer_id) RETURNING id")
+        new_cart_query = text("INSERT INTO active_carts(customer_id) VALUES (:customer_id) RETURNING id")
         cart_id = connection.execute(new_cart_query, {"customer_id": cust_id}).scalar()
 
     print(f"New Cart:{cart_id}, made for  for {new_cart}")
@@ -134,10 +135,31 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     print(f"cart id: {cart_id}, is buying {cart_item.quantity} {item_sku}")
     with db.engine.begin() as connection:
         #making cart_item
-        cart_item_query = text("INSERT INTO cart_item(cart_id, sku, quantity) VALUES (:cart_id, :sku, :quantity)")
+        cart_item_query = text("INSERT INTO active_cart_item(cart_id, sku, quantity) VALUES (:cart_id, :sku, :quantity)")
         connection.execute(cart_item_query, {"cart_id": cart_id, "sku": item_sku, "quantity": cart_item.quantity})
+        
         #removing quantity
-        update_potions = text("UPDATE potion_inventory SET quantity = quantity - :order_quantity WHERE sku = :sku ")
+        update_potions = text("""
+        with potion as (
+        SELECT potion_type FROM potion_inventory
+        WHERE sku = 'cyan'), 
+                              
+        day_info as (
+        select * from current_day), 
+        
+        transaction as (
+        INSERT INTO potion_transactions
+        (description)
+        VALUES ('Potions Purchased')
+        RETURNING id)
+
+        INSERT INTO potion_ledger
+        (transaction_id, potion_type, change, day, hour)
+        SELECT transaction.id, potion.potion_type, -10, day, hour
+        FROM potion
+        CROSS JOIN transaction
+        CROSS JOIN day_info""")
+
         connection.execute(update_potions, {"sku": item_sku, "order_quantity": cart_item.quantity})
 
     return "OK"
