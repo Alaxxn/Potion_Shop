@@ -31,6 +31,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     for potion in potions_delivered:
         new = {
             "potion_type": potion.potion_type,
+            "order_id": order_id,
             "additional_quantity" : potion.quantity
         }
         for i in range (len(barrel_dicts)): #setting the used quantity
@@ -39,11 +40,39 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     
     with db.engine.begin() as connection:
         update_potions = text("""
-            UPDATE potion_inventory SET quantity = quantity + :additional_quantity
-            WHERE potion_type = :potion_type """)
+        with day_info as (
+        select day, hour
+        from current_day),
+                        
+        potion_insert as (
+        INSERT INTO potion_transactions
+        (description)
+        VALUES ('Potions Bottled')
+        RETURNING id)
+
+        INSERT INTO potion_ledger
+        (order_id, potion_type, transaction_id, change, day, hour)
+        SELECT :order_id, :potion_type, potion_insert.id, :additional_quantity, day, hour
+        FROM potion_insert
+        CROSS JOIN day_info
+        """)
         update_ml = text("""
-            UPDATE barrel_inventory SET quantity = quantity - :ml_used
-            WHERE potion_type = :potion_type """)
+        with day_info as (
+        select day, hour
+        from current_day),
+                        
+        barrel_transaction as (
+        INSERT INTO barrel_transactions
+        (description)
+        VALUES ('Bottling')
+        RETURNING id)
+
+        INSERT INTO barrel_ledger
+        (potion_type, transaction_id, change, day, hour)
+        SELECT :potion_type, barrel_transaction.id, -:ml_used, day, hour
+        FROM barrel_transaction
+        CROSS JOIN day_info
+        """)
         connection.execute(update_potions, potions_list_dicts)
         connection.execute(update_ml, barrel_dicts)
     

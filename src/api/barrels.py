@@ -32,6 +32,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
             "potion_type" : barrel.potion_type,
             "cost" : barrel.price * barrel.quantity,
             "text" : f"Puchased {barrel.quantity}: {barrel.potion_type}",
+            "order_id" : order_id
         }
         barrels_delivered_dict.append(new)
 
@@ -64,8 +65,8 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         RETURNING id)
 
         INSERT INTO barrel_ledger
-        (potion_type, transaction_id, change, day, hour)
-        SELECT :potion_type, barrel_transaction.id, :additional_ml, day, hour
+        (order_id, potion_type, transaction_id, change, day, hour)
+        SELECT :order_id, :potion_type, barrel_transaction.id, :additional_ml, day, hour
         FROM barrel_transaction
         CROSS JOIN day_info
         """)
