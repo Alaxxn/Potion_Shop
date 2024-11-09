@@ -172,25 +172,48 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
     #TODO:add a check if this cart has already checked out before. (failed request)
 
-    potions_bought = 0
-    total_gold_paid = 0
-
     with db.engine.begin() as connection:
         #retrieve cart items
-        cart_items_query = text("SELECT sku, quantity FROM cart_item WHERE cart_id = :cart_id")
-        cart_items = connection.execute(cart_items_query, {"cart_id": cart_id})
-        #compute gold_paid and potion count
-        for row in cart_items:
-            sku, potion_count = row
-            cost_query = text("SELECT price FROM potion_inventory WHERE sku = :sku")
-            cost = connection.execute(cost_query, {"sku": sku}).scalar()
-            total_gold_paid += (potion_count * cost)
-            potions_bought += potion_count
+        # total_gold_paid, potions_bought 
+        output = connection.execute(text("""
+        SELECT sum(quantity) as total_potions_bought, sum(potion_inventory.price * quantity) as total_gold_paid
+        FROM active_cart_item 
+        JOIN potion_inventory ON potion_inventory.sku = active_cart_item.sku
+        WHERE cart_id = :cart_id
+        """),{"cart_id": cart_id}).mappings().all()
+    
+        cart_items_query = text("""
+        SELECT potion_inventory.sku, potion_inventory.potion_type as potion_type, quantity, potion_inventory.price as price
+        FROM active_cart_item 
+        JOIN potion_inventory ON potion_inventory.sku = active_cart_item.sku
+        WHERE cart_id = :cart_id""")
+        cart_items = connection.execute(cart_items_query, {"cart_id": cart_id}).mappings().all()
+
+        cart_items_dict = []    
+        for item in cart_items:
+            new_item = dict(item)
+            new_item["text"] = f"SOLD {new_item["quantity"]} : {new_item["potion_type"]}"
+            new_item["paid"] = new_item["quantity"] * new_item["price"]
+            cart_items_dict.append(new_item)
+
+        update_gold = text("""
+        with day_info as (select * from current_day),
         
-        update_gold = text("UPDATE shop_balance SET gold = gold + :gold_paid")
-        connection.execute(update_gold, {"gold_paid": total_gold_paid})
+        gold_insert as (
+        INSERT INTO gold_transactions
+        (description)
+        VALUES (:text)
+        RETURNING id
+        )
+
+        INSERT INTO gold_ledger
+        (transaction_id, change, day, hour)
+        SELECT gold_insert.id, :paid, day, hour
+        FROM gold_insert
+        CROSS JOIN day_info """)
+        connection.execute(update_gold, cart_items_dict)
 
     #TODO:
     #remove cart from carts
     #remove items from cart items
-    return {"total_potions_bought": potions_bought, "total_gold_paid": total_gold_paid}
+    return output[0]
