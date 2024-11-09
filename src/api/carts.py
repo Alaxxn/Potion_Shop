@@ -192,7 +192,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         cart_items_dict = []    
         for item in cart_items:
             new_item = dict(item)
-            new_item["text"] = f"SOLD {new_item["quantity"]} : {new_item["potion_type"]}"
+            new_item["text"] = f'SOLD {new_item["quantity"]} : {new_item["potion_type"]}'
             new_item["paid"] = new_item["quantity"] * new_item["price"]
             cart_items_dict.append(new_item)
 
