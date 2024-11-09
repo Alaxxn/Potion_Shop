@@ -13,7 +13,6 @@ def get_catalog():
     # bottle_plan = bottler.get_bottle_plan()
 
     with db.engine.begin() as connection:
-        #FOR MARKET TESTING PURPOSES:
         inv_quer =  """
         with potion_counts as (
         SELECT potion_type, SUM(change) as quantity

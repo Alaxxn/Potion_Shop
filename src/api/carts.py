@@ -142,7 +142,7 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
         update_potions = text("""
         with potion as (
         SELECT potion_type FROM potion_inventory
-        WHERE sku = 'cyan'), 
+        WHERE sku = :sku), 
                               
         day_info as (
         select * from current_day), 
@@ -155,7 +155,7 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
 
         INSERT INTO potion_ledger
         (transaction_id, potion_type, change, day, hour)
-        SELECT transaction.id, potion.potion_type, -10, day, hour
+        SELECT transaction.id, potion.potion_type, -:order_quantity, day, hour
         FROM potion
         CROSS JOIN transaction
         CROSS JOIN day_info""")

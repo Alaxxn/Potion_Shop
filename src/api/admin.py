@@ -80,9 +80,9 @@ def reset():
         )
 
         INSERT INTO potion_ledger
-        (transaction_id, potion_type, change, price, day, hour)
+        (transaction_id, potion_type, change, day, hour)
         SELECT 
-        reset.id, potion_inventory.potion_type, 0, price, day_info.day, day_info.hour
+        reset.id, potion_inventory.potion_type, 0, day_info.day, day_info.hour
         FROM potion_inventory
         CROSS JOIN day_info
         CROSS JOIN reset;
