@@ -48,9 +48,9 @@ def get_catalog():
             SELECT sku, name, quantity, price, potion_counts.potion_type 
             FROM potion_inventory 
             JOIN potion_counts ON potion_counts.potion_type = potion_inventory.potion_type
-            WHERE in_catalog = True AND quantity > 0
+            WHERE in_catalog = False and quantity > 0
             ORDER BY quantity desc
-            LIMIT 2
+            LIMIT 6
             """
             
             additional_potions = connection.execute(sqlalchemy.text(add_catalog))
