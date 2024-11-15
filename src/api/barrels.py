@@ -85,7 +85,6 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
     #TODO: Make this readable :)
     #TODO: Should consider buying next days customer bias.
 
-    #print(wholesale_catalog)
     unfiltered_catalog = wholesale_catalog_request.copy()
     wholesale_catalog = []
     max_ml_value = 0.3
@@ -93,9 +92,12 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
         curr_value = item.price/item.ml_per_barrel
         if curr_value < max_ml_value: #Making sure we don't buy small barrels
             wholesale_catalog.append(item)
-    print(wholesale_catalog)
+    
+    print("wholesale_catalog:")
+    for l in wholesale_catalog:
+        print(l)
 
-    #initializing
+    #Getting info
     with db.engine.begin() as connection:
         inventory_query = """
         SELECT potion_type , sum(change) AS quantity
@@ -108,7 +110,6 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
         gold = connection.execute(sqlalchemy.text(gold_query)).scalar()
         ml_limit = connection.execute(sqlalchemy.text(ml_query)).scalar()
 
-    ml_threshold = ml_limit//4
     plan = []
 
     inventory = [0,0,0,0] # [170,200,1000,500] < l_limit
@@ -118,18 +119,23 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
     
     
     #computation
-    available_to_buy = filter_wholesale(wholesale_catalog, gold, inventory, ml_threshold, ml_limit) 
+    available_to_buy = filter_wholesale(wholesale_catalog, gold, inventory, ml_limit) 
 
     while available_to_buy:
         buy_bool = in_catalog(available_to_buy) # will alawys have atleast 1
+
+        #Find the type with lowest ml_count
         lowest_index = inventory.index(min(inventory))
+        i = 1 
+        while buy_bool[lowest_index] != True:
+            temp_inventory = inventory.copy()
+            temp_inventory.sort()
+            lowest_index = inventory.index(temp_inventory[i])
+            i += 1
 
-        if buy_bool[lowest_index] == True: # can buy for lowest 
-            purchase = determine_purchase(available_to_buy,lowest_index).copy()
-        else: #choose first barrel 
-            lowest_index = buy_bool.index(True)
-            purchase = determine_purchase(available_to_buy,lowest_index).copy()
+        purchase = determine_purchase(available_to_buy,lowest_index).copy()
 
+        #update state
         gold -= purchase.price
         inventory[lowest_index] += purchase.ml_per_barrel
 
@@ -149,10 +155,11 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
             purchase.quantity = 1
             plan.append(purchase)
 
-        available_to_buy = filter_wholesale(wholesale_catalog, gold, inventory, ml_threshold, ml_limit) 
+        available_to_buy = filter_wholesale(wholesale_catalog, gold, inventory, ml_limit) 
+    print("\nBARREL PURCHASE:")
     for item in plan:
         print(f"WANT TO BUY {item.quantity} {item.sku} and it will cost ={item.quantity * item.price}")
-    print(f"New inventoy Space is {inventory}")
+    print(f"New inventoy Space is {inventory} \n")
     
     return plan
 
@@ -176,7 +183,7 @@ def in_catalog (available):
         available_bool[index] = True
     return available_bool
 
-def filter_wholesale(catalog, gold, inventory, threshold, limit):
+def filter_wholesale(catalog, gold, inventory, limit):
     """"returns the barrels available to buy at current state"""
 
     available_to_buy = []
@@ -185,7 +192,7 @@ def filter_wholesale(catalog, gold, inventory, threshold, limit):
             index = barrel.potion_type.index(1)
             temp_barrels = inventory.copy()
             temp_barrels[index] += barrel.ml_per_barrel
-            if temp_barrels[index] < threshold and sum(temp_barrels) < limit:
+            if sum(temp_barrels) < limit:
                 available_to_buy.append(barrel)
 
     return available_to_buy
