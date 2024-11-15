@@ -62,11 +62,23 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
         SET potion_capacity = potion_capacity + :increase
         """)
         update_gold = sqlalchemy.text("""
-        UPDATE shop
-        SET gold = gold - :cost
+        with day_info as (select * from current_day),
+        
+        gold_insert as (
+        INSERT INTO gold_transactions
+        (description)
+        VALUES ('purchased inventory space')
+        RETURNING id
+        )
+
+        INSERT INTO gold_ledger
+        (transaction_id, change, day, hour)
+        SELECT gold_insert.id, -:paid, day, hour
+        FROM gold_insert
+        CROSS JOIN day_info
         """)
         connection.execute(update_ml,{"increase": additional_ml})
-        connection.execute(update_gold,{"cost": gold_cost})
+        connection.execute(update_gold,{"paid": gold_cost})
         connection.execute(update_potion,{"increase": additional_pots})
 
 

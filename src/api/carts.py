@@ -30,6 +30,10 @@ def search_orders(
     sort_col: search_sort_options = search_sort_options.timestamp,
     sort_order: search_sort_order = search_sort_order.desc,
 ):
+    #select based off sorted columns,
+    print("This is testing to see the colums")
+    print(sort_col)
+    print(sort_order)
     """
     Search for cart line items by customer name and/or potion sku.
 
