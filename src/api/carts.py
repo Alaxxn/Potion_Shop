@@ -201,10 +201,11 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             new_item["paid"] = new_item["quantity"] * new_item["price"]
             cart_items_dict.append(new_item)
 
+        #maybe implement?
         purchase_time = text("""
-        UPDATE purchse_history SET 
+        UPDATE purchase_history SET 
         timestamp = now
-        """
+        """)
         update_gold = text("""
         with day_info as (select * from current_day),
         
