@@ -32,8 +32,9 @@ def search_orders(
 ):
     #select based off sorted columns,
     print("This is testing to see the colums")
-    print(sort_col)
-    print(sort_order)
+    print(type(sort_col.value))
+    print(sort_col.value)
+
     """
     Search for cart line items by customer name and/or potion sku.
 
@@ -64,7 +65,7 @@ def search_orders(
         "next": "",
         "results": [
             {
-                "line_item_id": 1,
+                "line_item_id": 1, 
                 "item_sku": "1 oblivion potion",
                 "customer_name": "Scaramouche",
                 "line_item_total": 50,
@@ -200,6 +201,10 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             new_item["paid"] = new_item["quantity"] * new_item["price"]
             cart_items_dict.append(new_item)
 
+        purchase_time = text("""
+        UPDATE purchse_history SET 
+        timestamp = now
+        """
         update_gold = text("""
         with day_info as (select * from current_day),
         
@@ -217,7 +222,4 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         CROSS JOIN day_info """)
         connection.execute(update_gold, cart_items_dict)
 
-    #TODO:
-    #remove cart from carts
-    #remove items from cart items
     return output[0]
