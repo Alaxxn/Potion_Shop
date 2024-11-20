@@ -30,10 +30,10 @@ def get_capacity_plan():
     """
     with db.engine.begin() as connection:
         gold = connection.execute(sqlalchemy.text("SELECT sum(change) FROM gold_ledger")).scalar()
-
+    
     return {
-        "potion_capacity": (gold//3)//1000,
-        "ml_capacity": (gold//3)//1000
+        "potion_capacity": min((gold//3)//1000, 4),
+        "ml_capacity": min((gold//3)//1000, 4)
         }
 
 class CapacityPurchase(BaseModel):
