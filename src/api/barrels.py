@@ -106,10 +106,16 @@ def get_wholesale_purchase_plan(wholesale_catalog_request: list[Barrel]):
         """
         gold_query = "SELECT sum(change) FROM gold_ledger"
         ml_query = "SELECT ml_capacity FROM shop"
+        buying_query = "SELECT buying_ml FROM shop"
+        buying = connection.execute(sqlalchemy.text(buying_query)).scalar()
         barrel_inventory = connection.execute(sqlalchemy.text(inventory_query))
         gold = connection.execute(sqlalchemy.text(gold_query)).scalar()
         ml_limit = connection.execute(sqlalchemy.text(ml_query)).scalar()
 
+    if buying == False:
+        print("Buying ml is turned off")
+        return []
+    
     plan = []
 
     inventory = [0,0,0,0] # [170,200,1000,500] < l_limit
