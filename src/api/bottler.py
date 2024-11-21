@@ -97,9 +97,16 @@ def get_bottle_plan():
         barrel_obj = connection.execute(sqlalchemy.text("""
         SELECT potion_type, SUM(change) as quantity FROM barrel_ledger GROUP BY potion_type"""))
         potion_obj = connection.execute(sqlalchemy.text("""
-        SELECT potion_type FROM potion_ledger 
-        GROUP BY potion_type
-        ORDER BY sum(change)
+        select
+        potion_ledger.potion_type
+        from
+        potion_ledger
+        join potion_inventory on potion_inventory.potion_type = potion_ledger.potion_type
+        WHERE potion_inventory.want_to_make = true
+        group by
+        potion_ledger.potion_type
+        order by
+        sum(change);
         """))
         potion_limit = connection.execute(sqlalchemy.text("SELECT potion_capacity FROM shop")).scalar()
     
